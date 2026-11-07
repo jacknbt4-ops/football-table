@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<!-- saved from url=(0027)file:///D:/Ball/index2.html -->
+<html lang="th"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตารางท้ายผลบอล (บันทึก + ส่งออก HTML)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Sarabun", "Segoe UI", Tahoma, sans-serif;
+    background: linear-gradient(135deg, #eef2f7 0%, #dfe9f3 100%);
+    margin: 0; padding: 30px 15px; color: #2c3e50;
+  }
+  h1 { text-align: center; font-size: 24px; margin-bottom: 6px; color: #1a3a5c; }
+  .subtitle { text-align: center; font-size: 13px; color: #6b7c8f; margin-bottom: 18px; }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    justify-content: center; margin-bottom: 18px;
+  }
+  .btn {
+    border: none; border-radius: 8px; padding: 9px 18px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: transform 0.1s, box-shadow 0.2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-save   { background: #1e8e3e; color: #fff; box-shadow: 0 3px 8px rgba(30,142,62,0.3); }
+  .btn-save:hover   { background: #16722f; }
+  .btn-export { background: #2989d8; color: #fff; box-shadow: 0 3px 8px rgba(41,137,216,0.3); }
+  .btn-export:hover { background: #1e6fb8; }
+  .btn-html   { background: #8e44ad; color: #fff; box-shadow: 0 3px 8px rgba(142,68,173,0.35); }
+  .btn-html:hover   { background: #71368a; }
+  .btn-add    { background: #6c5ce7; color: #fff; box-shadow: 0 3px 8px rgba(108,92,231,0.3); }
+  .btn-add:hover    { background: #574bdb; }
+  .btn-clear  { background: #d93025; color: #fff; box-shadow: 0 3px 8px rgba(217,48,37,0.3); }
+  .btn-clear:hover  { background: #b3261e; }
+
+  .status {
+    text-align: center; font-size: 13px; margin-bottom: 14px;
+    min-height: 18px; color: #1e8e3e; font-weight: 600;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .status.show { opacity: 1; }
+  .status.error { color: #d93025; }
+
+  .table-wrap {
+    overflow-x: auto; background: #fff; border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 6px;
+  }
+  table { width: 100%; border-collapse: collapse; min-width: 1050px; font-size: 14px; }
+  thead th {
+    background: linear-gradient(135deg, #1e5799, #2989d8);
+    color: #fff; padding: 12px 10px; text-align: left;
+    font-weight: 600; white-space: nowrap;
+  }
+  thead th:first-child { border-top-left-radius: 10px; }
+  thead th:last-child  { border-top-right-radius: 10px; }
+  tbody td { padding: 10px; border-bottom: 1px solid #e8eef4; vertical-align: top; }
+  tbody tr:nth-child(even) { background: #f7fafd; }
+  tbody tr:hover { background: #eaf4ff; transition: background 0.2s; }
+
+  .col-no     { width: 50px;  text-align: center; font-weight: 600; color: #2989d8; }
+  .col-date   { width: 120px; }
+  .col-league { width: 140px; }
+  .col-match  { min-width: 220px; }
+  .col-time   { width: 100px; }
+  .col-pred   { min-width: 200px; }
+  .col-result { min-width: 200px; }
+  .col-del    { width: 50px; text-align: center; }
+
+  input.cell-input, textarea.cell-input {
+    width: 100%; border: 1px dashed #c5d3e0; border-radius: 6px;
+    padding: 6px 8px; font-family: inherit; font-size: 13px;
+    background: #fbfdff; resize: vertical;
+    transition: border 0.2s, background 0.2s;
+  }
+  input.cell-input:focus, textarea.cell-input:focus {
+    outline: none; border: 1px solid #2989d8; background: #fff;
+    box-shadow: 0 0 0 3px rgba(41,137,216,0.15);
+  }
+
+  .btn-del {
+    background: #f1f3f6; border: none; color: #d93025;
+    font-weight: 700; font-size: 16px; width: 30px; height: 30px;
+    border-radius: 50%; cursor: pointer; line-height: 1;
+  }
+  .btn-del:hover { background: #ffe5e3; }
+
+  .note { text-align: center; font-size: 12px; color: #6b7c8f; margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<h1>⚽ ตารางท้ายผลบอล</h1>
+<p class="subtitle">บันทึกอัตโนมัติ · ส่งออกเป็นไฟล์ HTML</p>
+
+<div class="toolbar">
+  <button class="btn btn-save" onclick="saveNow()">💾 บันทึกทันที</button>
+  <button class="btn btn-export" onclick="exportCSV()">📤 ส่งออก CSV</button>
+  <button class="btn btn-html" onclick="exportHTML()">🌐 ส่งออก HTML</button>
+  <button class="btn btn-add" onclick="addRow()">➕ เพิ่มแถว</button>
+  <button class="btn btn-clear" onclick="clearAll()">🗑️ ล้างข้อมูล</button>
+</div>
+
+<div class="status" id="status">💾 บันทึกอัตโนมัติแล้ว</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-no">#</th>
+        <th class="col-date">วันที่</th>
+        <th class="col-league">ลีก</th>
+        <th class="col-match">แมตช์</th>
+        <th class="col-time">สถานะ / นาที</th>
+        <th class="col-pred">คำทำนาย</th>
+        <th class="col-result">ผลรับ</th>
+        <th class="col-del"></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"><tr>
+      <td class="col-no">1</td>
+      <td class="col-date"><input class="cell-input" data-i="0" data-f="date" value="" placeholder="วว/ดด/ปปปป"></td>
+      <td class="col-league"><input class="cell-input" data-i="0" data-f="league" value="" placeholder="ลีก"></td>
+      <td class="col-match"><textarea class="cell-input" rows="1" data-i="0" data-f="match" placeholder="ทีมเหย้า - ทีมเยือน"></textarea></td>
+      <td class="col-time"><input class="cell-input" data-i="0" data-f="time" value="" placeholder="นาที"></td>
+      <td class="col-pred"><textarea class="cell-input" rows="1" data-i="0" data-f="pred" placeholder="คำทำนาย"></textarea></td>
+      <td class="col-result"><textarea class="cell-input" rows="1" data-i="0" data-f="result" placeholder="ผลรับ"></textarea></td>
+      <td class="col-del"><button class="btn-del" title="ลบแถว" onclick="deleteRow(0)">×</button></td>
+    </tr></tbody>
+  </table>
+</div>
+
+<p class="note">💡 ถ้าคลิกส่งออก HTML แล้วไม่มีไฟล์ ให้ดูข้อความแจ้งเตือนด้านบนตาราง</p>
+
+<script>
+/* ---------- ข้อมูลเริ่มต้น ---------- */
+const DEFAULT_ROWS = [
+  { date:"", league:"", match:"ชิมิซึ เอส พัลส์ พบ โตเกียว เวอร์ดี", time:"ท้ายนาที 65",
+    pred:"มีลูกแรกในครึ่งแรก, ชิมิซึ เอส-พัลส์ ชนะ, สูง 0.5",
+    result:"สูงแรก 0.5 ❌, สูง 0.5 ✅, ชิมิซึ เอส-พัลส์ ชนะ ✅" },
+  { date:"", league:"", match:"เอเพีย ไลช์ฮาร์ดท์ ไทเกอร์ส์ 1 - 1 บรอดเมโดว์ เมจิค", time:"ท้ายนาที 65",
+    pred:"เอเพีย ไลช์ฮาร์ดท์ ไทเกอร์ส์ ชนะ, สูง 2.5",
+    result:"สูง 2.5 ✅, เอเพีย ไลช์ฮาร์ดท์ ไทเกอร์ส์ ชนะ ✅" },
+  { date:"", league:"", match:"มาร์โคนี่ สตอลเลี่ยน 0 - 2 เบย์วอเตอร์ ซิตี้", time:"ท้ายนาที 65",
+    pred:"เบย์วอเตอร์ ซิตี้ ชนะ, สูง 2.5",
+    result:"สูง 2.5 ✅, เบย์วอเตอร์ ซิตี้ ชนะ ✅" },
+  { date:"", league:"", match:"อิวากิ เอฟซี 2 - 0 มอนเตดิโอ ยามากาตะ", time:"ท้ายนาที 55",
+    pred:"อิวากิ เอฟซี ชนะ, สูง 2.5",
+    result:"สูง 2.5 ❌, อิวากิ เอฟซี ✅" },
+  { date:"", league:"", match:"โยโกะฮามะ เอฟซี 1 - 0 ฟูจิเอดะ เอ็มวายเอฟซี", time:"ท้ายนาที 46",
+    pred:"โยโกะฮามะ เอฟซี ชนะ, สูง 1.5",
+    result:"สูง 1.5 ✅, โยโกะฮามะ เอฟซี ชนะ ✅" },
+  { date:"", league:"", match:"ต้าเหลียน คุน ซิตี้ 2 - 0 เหมยโจว ฮากกา", time:"ท้ายนาที 33",
+    pred:"สูง 2.5, 90 นาที ต้าเหลียน คุน ซิตี้ ชนะ", result:"" },
+  { date:"", league:"", match:"คะชิวะ เรย์โซล 0 - 0 คะวะซะกิ ฟรอนเทล", time:"ท้ายนาที 44",
+    pred:"สูง 2.5, 90 นาที คะชิวะ เรย์โซล ชนะ", result:"สูงแรก 1.5 ✅" },
+  { date:"", league:"", match:"กิมโป เอฟซี 0 - 0 อันซาน กรีนเนอร์ เอฟซี", time:"ท้ายนาที 3",
+    pred:"สูงแรก 0.5, 90 นาที อันซาน กรีนเนอร์ เอฟซี ชนะ", result:"สูงแรก 0.5 ✅" },
+  { date:"", league:"", match:"", time:"", pred:"", result:"" },
+  { date:"", league:"", match:"", time:"", pred:"", result:"" }
+];
+
+const STORAGE_KEY = "footballTableData_v1";
+let rows = [];
+
+/* ---------- โหลด / บันทึก ---------- */
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      rows = JSON.parse(saved);
+      if (!Array.isArray(rows) || rows.length === 0) rows = clone(DEFAULT_ROWS);
+    } else {
+      rows = clone(DEFAULT_ROWS);
+    }
+  } catch (e) { rows = clone(DEFAULT_ROWS); }
+}
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+let saveTimer = null;
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+    showStatus("💾 บันทึกอัตโนมัติแล้ว");
+  }, 400);
+}
+function saveNow() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+  showStatus("✅ บันทึกข้อมูลเรียบร้อย");
+}
+function showStatus(msg, isError = false) {
+  const el = document.getElementById("status");
+  el.textContent = msg;
+  el.classList.toggle("error", isError);
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+/* ---------- วาดตาราง ---------- */
+function render() {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+  rows.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="col-no">${i + 1}</td>
+      <td class="col-date"><input class="cell-input" data-i="${i}" data-f="date"   value="${esc(row.date)}"   placeholder="วว/ดด/ปปปป"></td>
+      <td class="col-league"><input class="cell-input" data-i="${i}" data-f="league" value="${esc(row.league)}" placeholder="ลีก"></td>
+      <td class="col-match"><textarea class="cell-input" rows="1" data-i="${i}" data-f="match" placeholder="ทีมเหย้า - ทีมเยือน">${esc(row.match)}</textarea></td>
+      <td class="col-time"><input class="cell-input" data-i="${i}" data-f="time"   value="${esc(row.time)}"   placeholder="นาที"></td>
+      <td class="col-pred"><textarea class="cell-input" rows="1" data-i="${i}" data-f="pred" placeholder="คำทำนาย">${esc(row.pred)}</textarea></td>
+      <td class="col-result"><textarea class="cell-input" rows="1" data-i="${i}" data-f="result" placeholder="ผลรับ">${esc(row.result)}</textarea></td>
+      <td class="col-del"><button class="btn-del" title="ลบแถว" onclick="deleteRow(${i})">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  bindInputs();
+}
+function esc(s){ return (s ?? "").toString().replace(/"/g, "&quot;"); }
+
+function bindInputs() {
+  document.querySelectorAll(".cell-input").forEach(inp => {
+    inp.addEventListener("input", e => {
+      const i = +e.target.dataset.i;
+      const f = e.target.dataset.f;
+      rows[i][f] = e.target.value;
+      autoSave();
+    });
+  });
+}
+
+/* ---------- เพิ่ม / ลบ / ล้าง ---------- */
+function addRow() {
+  rows.push({ date:"", league:"", match:"", time:"", pred:"", result:"" });
+  render(); autoSave();
+  showStatus("➕ เพิ่มแถวใหม่แล้ว");
+}
+function deleteRow(i) {
+  if (!confirm(`ลบแถวที่ ${i + 1} ใช่หรือไม่?`)) return;
+  rows.splice(i, 1);
+  render(); autoSave();
+  showStatus("🗑️ ลบแถวแล้ว");
+}
+function clearAll() {
+  if (!confirm("ต้องการล้างข้อมูลทั้งหมดและคืนค่าเริ่มต้นหรือไม่?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  rows = clone(DEFAULT_ROWS);
+  render();
+  showStatus("↩️ คืนค่าเริ่มต้นแล้ว");
+}
+
+/* ---------- ตัวช่วยดาวน์โหลด ---------- */
+function stampName() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
+/**
+ * ดาวน์โหลดไฟล์แบบปลอดภัย
+ * - ใช้ชื่อไฟล์ภาษาอังกฤษ (กันปัญหา browser ไม่รับชื่อไทย)
+ * - ไม่ revoke URL ทันที (รอ 5 วินาที)
+ * - ถ้า download attr ไม่ทำงาน → เปิดในแท็บใหม่แทน
+ */
+function download(filename, content, mime) {
+  try {
+    const blob = new Blob([content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+
+    // ตรวจว่า browser รองรับ download attribute
+    if (typeof a.download === "undefined") {
+      // fallback: เปิดในแท็บใหม่
+      window.open(url, "_blank");
+      document.body.removeChild(a);
+      showStatus("⚠️ เบราว์เซอร์ไม่รองรับการดาวน์โหลด เปิดไฟล์ในแท็บใหม่แทน", true);
+      return;
+    }
+
+    a.click();
+    document.body.removeChild(a);
+
+    // revoke ช้าๆ เพื่อให้ browser เริ่ม download ทัน
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showStatus(`✅ ดาวน์โหลดแล้ว: ${filename}`);
+  } catch (err) {
+    console.error(err);
+    showStatus("❌ ดาวน์โหลดไม่สำเร็จ: " + err.message, true);
+  }
+}
+
+/* ---------- ส่งออก CSV ---------- */
+function exportCSV() {
+  try {
+    const header = ["ลำดับ","วันที่","ลีก","แมตช์","สถานะ/นาที","คำทำนาย","ผลรับ"];
+    const lines = [header.join(",")];
+    rows.forEach((r, i) => {
+      const cells = [i+1, r.date, r.league, r.match, r.time, r.pred, r.result]
+        .map(v => `"${(v ?? "").toString().replace(/"/g, '""').replace(/\n/g, " ")}"`);
+      lines.push(cells.join(","));
+    });
+    const csv = "\uFEFF" + lines.join("\r\n");
+    download(`football_table_${stampName()}.csv`, csv, "text/csv;charset=utf-8;");
+  } catch (err) {
+    showStatus("❌ ส่งออก CSV ไม่สำเร็จ: " + err.message, true);
+  }
+}
+
+/* ---------- ส่งออก HTML ---------- */
+function exportHTML() {
+  try {
+    const title = "ตารางท้ายผลบอล";
+    const now   = new Date().toLocaleString("th-TH");
+
+    const tableRows = rows.map((r, i) => `
+      <tr>
+        <td class="col-no">${i + 1}</td>
+        <td>${htmlEsc(r.date)}</td>
+        <td>${htmlEsc(r.league)}</td>
+        <td>${htmlEsc(r.match)}</td>
+        <td>${htmlEsc(r.time)}</td>
+        <td>${htmlEsc(r.pred)}</td>
+        <td>${htmlEsc(r.result)}</td>
+      </tr>`).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Sarabun","Segoe UI",Tahoma,sans-serif;
+    background: linear-gradient(135deg,#eef2f7 0%,#dfe9f3 100%);
+    margin:0; padding:30px 15px; color:#2c3e50;
+  }
+  h1 { text-align:center; font-size:24px; margin-bottom:6px; color:#1a3a5c; }
+  .subtitle { text-align:center; font-size:13px; color:#6b7c8f; margin-bottom:18px; }
+  .table-wrap {
+    overflow-x:auto; background:#fff; border-radius:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12); padding:6px;
+  }
+  table { width:100%; border-collapse:collapse; min-width:1000px; font-size:14px; }
+  thead th {
+    background:linear-gradient(135deg,#1e5799,#2989d8);
+    color:#fff; padding:12px 10px; text-align:left;
+    font-weight:600; white-space:nowrap;
+  }
+  thead th:first-child { border-top-left-radius:10px; }
+  thead th:last-child  { border-top-right-radius:10px; }
+  tbody td { padding:10px; border-bottom:1px solid #e8eef4; vertical-align:top; }
+  tbody tr:nth-child(even) { background:#f7fafd; }
+  tbody tr:hover { background:#eaf4ff; }
+  .col-no { width:50px; text-align:center; font-weight:600; color:#2989d8; }
+  .note { text-align:center; font-size:12px; color:#6b7c8f; margin-top:14px; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .table-wrap { box-shadow:none; }
+    thead th { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+  <h1>⚽ ${title}</h1>
+  <p class="subtitle">ส่งออกเมื่อ ${htmlEsc(now)} · ${rows.length} รายการ</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-no">#</th>
+          <th>วันที่</th>
+          <th>ลีก</th>
+          <th>แมตช์</th>
+          <th>สถานะ / นาที</th>
+          <th>คำทำนาย</th>
+          <th>ผลรับ</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </div>
+  <p class="note">ไฟล์นี้สร้างจากโปรแกรมตารางท้ายผลบอล</p>
+</body>
+</html>`;
+
+    download(`football_table_${stampName()}.html`, html, "text/html;charset=utf-8;");
+  } catch (err) {
+    console.error(err);
+    showStatus("❌ ส่งออก HTML ไม่สำเร็จ: " + err.message, true);
+  }
+}
+
+function htmlEsc(s) {
+  return (s ?? "").toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, "<br>");
+}
+
+/* ---------- เริ่มต้น ---------- */
+loadData();
+render();
+</script>
+
+</body></html>
