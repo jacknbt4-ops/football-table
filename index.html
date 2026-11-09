@@ -63,10 +63,10 @@
   /* 🔥 การตั้งค่าสำหรับตอนพิมพ์ (Print / PDF) */
   @media print {
     body { background:#fff; padding:0; }
-    .toolbar { display: none; } /* ซ่อนปุ่ม */
+    .toolbar { display: none; }
     .table-wrap { box-shadow:none; padding:0; }
     .input-cell { border: none; background: transparent; padding: 0; }
-    th:last-child, td:last-child { display: none; } /* ซ่อนคอลัมน์จัดการตอนพิมพ์ */
+    th:last-child, td:last-child { display: none; }
     thead th { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   }
 </style>
@@ -77,13 +77,13 @@
   
   <!-- 🔥 แถบเครื่องมือ -->
   <div class="toolbar">
-    <button class="btn btn-primary" onclick="addNewRow()">➕ เพิ่มแถวใหม่</button>
+    <!-- เปลี่ยนข้อความปุ่มให้ตรงกับพฤติกรรม -->
+    <button class="btn btn-primary" onclick="addNewRow()">➕ เพิ่มแถวใหม่ (ล่างสุด)</button>
     <button class="btn btn-success" onclick="exportData()">📤 ส่งออก (JSON)</button>
     <button class="btn btn-warning" onclick="document.getElementById('fileInput').click()">📥 นำเข้า (JSON)</button>
     <button class="btn btn-danger" onclick="clearAllData()">🗑️ ล้างข้อมูล</button>
     <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="importData(event)">
     
-    <!-- ปุ่มพิมพ์ (แถมให้) -->
     <button class="btn" style="background:#6b7280; color:#fff;" onclick="window.print()">🖨️ พิมพ์ / PDF</button>
   </div>
 
@@ -110,7 +110,7 @@
   <p class="note">ไฟล์นี้สร้างจากโปรแกรมตารางท้ายผลบอล (เวอร์ชันแก้ไขได้)</p>
 
 <script>
-// ข้อมูลเริ่มต้น (ถ้าไม่เคยมีข้อมูลในเครื่อง)
+// ข้อมูลเริ่มต้น
 const DEFAULT_DATA = [
   { date: "09/11/2569", league: "บราซิล ซีรี่ย์ บี", match: "โกยาส จีโอ 0 - 0 ปอนเต เปรต้า", minute: "77", ht: "ผ่าน (1-0)", ft: "สูง 0.5", result: "สูง 0.5 ✅ ยิงทดเวลา" },
   { date: "09/11/2569", league: "เปรู ลีกา 1", match: "เดปอร์ติโว การ์ซิลาโซ 0 - 0 โคเมอร์เซียนเตส ยูนิดอส", minute: "58", ht: "ไม่ผ่าน (0-0)", ft: "สูง 0.5", result: "สูง 0.5 ❌" },
@@ -136,11 +136,16 @@ function renderTable() {
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
 
+  if (tableData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#94a3b8; padding:20px;">ยังไม่มีข้อมูล (กดปุ่ม "เพิ่มแถวใหม่" ด้านบน)</td></tr>';
+    return;
+  }
+
   tableData.forEach((row, index) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="col-no">${index + 1}</td>
-      <td><input type="text" class="input-cell" value="${row.date || ''}" onchange="updateData(${index}, 'date', this.value)"></td>
+      <td><input type="text" class="input-cell date-input" value="${row.date || ''}" onchange="updateData(${index}, 'date', this.value)"></td>
       <td><input type="text" class="input-cell" value="${row.league || ''}" onchange="updateData(${index}, 'league', this.value)"></td>
       <td><input type="text" class="input-cell" value="${row.match || ''}" onchange="updateData(${index}, 'match', this.value)"></td>
       <td><input type="text" class="input-cell" value="${row.minute || ''}" onchange="updateData(${index}, 'minute', this.value)" style="text-align:center;"></td>
@@ -166,11 +171,24 @@ function saveData() {
   localStorage.setItem('jackai_results_data', JSON.stringify(tableData));
 }
 
-// เพิ่มแถวใหม่
+// 🔥 เพิ่มแถวใหม่ (ล่างสุด) + เลื่อนจอไปหาพร้อมโฟกัส
 function addNewRow() {
-  tableData.unshift({ date: "", league: "", match: "", minute: "", ht: "", ft: "", result: "" });
+  // 1. เพิ่มข้อมูลว่างไว้ล่างสุด (ใช้ push)
+  tableData.push({ date: "", league: "", match: "", minute: "", ht: "", ft: "", result: "" });
+  
+  // 2. วาดตารางใหม่
   renderTable();
   saveData();
+
+  // 3. เลื่อนหน้าจอลงไปที่แถวล่างสุดและโฟกัสช่องวันที่
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.date-input');
+    if (inputs.length > 0) {
+      const lastInput = inputs[inputs.length - 1]; // ดึงช่องของแถวล่าสุด
+      lastInput.focus(); // โฟกัสให้พิมพ์ได้เลย
+      lastInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); // เลื่อนจอตาม
+    }
+  }, 100);
 }
 
 // ลบแถว
@@ -227,7 +245,7 @@ function importData(event) {
     }
   };
   reader.readAsText(file);
-  event.target.value = ''; // เคลียร์ค่า
+  event.target.value = ''; 
 }
 </script>
 </body>
