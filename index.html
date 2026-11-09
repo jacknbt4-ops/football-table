@@ -3,25 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ตารางท้ายผลบอล</title>
+<title>ตารางท้ายผลบอล (แก้ไขได้)</title>
 <style>
   * { box-sizing: border-box; }
   body {
     font-family: "Sarabun","Segoe UI",Tahoma,sans-serif;
     background: linear-gradient(135deg,#eef2f7 0%,#dfe9f3 100%);
-    margin:0; padding:30px 15px; color:#2c3e50;
+    margin:0; padding:20px 15px; color:#2c3e50;
   }
   h1 { text-align:center; font-size:24px; margin-bottom:6px; color:#1a3a5c; }
-  .subtitle { text-align:center; font-size:13px; color:#6b7c8f; margin-bottom:18px; }
+  .subtitle { text-align:center; font-size:13px; color:#6b7c8f; margin-bottom:15px; }
   
-  .action-bar { text-align: center; margin-bottom: 15px; }
-  .btn-print {
-    background: #1e5799; color: white; border: none; padding: 8px 20px;
-    border-radius: 6px; font-size: 14px; cursor: pointer; font-family: inherit;
-    box-shadow: 0 2px 5px rgba(30,87,153,0.3); transition: 0.2s;
+  /* 🔥 แถบเครื่องมือ */
+  .toolbar {
+    display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;
   }
-  .btn-print:hover { background: #2989d8; transform: translateY(-1px); }
-
+  .btn {
+    padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; 
+    font-weight: bold; font-size: 14px; font-family: inherit; transition: 0.2s;
+    display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .btn-primary { background: #2989d8; color: #fff; }
+  .btn-primary:hover { background: #1e5799; transform: translateY(-1px); }
+  .btn-success { background: #10b981; color: #fff; }
+  .btn-success:hover { background: #059669; transform: translateY(-1px); }
+  .btn-warning { background: #f59e0b; color: #fff; }
+  .btn-warning:hover { background: #d97706; transform: translateY(-1px); }
+  .btn-danger  { background: #ef4444; color: #fff; padding: 8px 12px; }
+  .btn-danger:hover { background: #dc2626; }
+  
   .table-wrap {
     overflow-x:auto; background:#fff; border-radius:14px;
     box-shadow:0 8px 24px rgba(0,0,0,0.12); padding:6px;
@@ -29,32 +39,47 @@
   table { width:100%; border-collapse:collapse; min-width:1100px; font-size:14px; }
   thead th {
     background:linear-gradient(135deg,#1e5799,#2989d8);
-    color:#fff; padding:12px 10px; text-align:left;
-    font-weight:600; white-space:nowrap;
+    color:#fff; padding:12px 10px; text-align:left; font-weight:600; white-space:nowrap;
   }
   thead th:first-child { border-top-left-radius:10px; }
   thead th:last-child  { border-top-right-radius:10px; }
-  tbody td { padding:10px; border-bottom:1px solid #e8eef4; vertical-align:top; }
+  
+  tbody td { padding:6px 10px; border-bottom:1px solid #e8eef4; vertical-align:middle; }
   tbody tr:nth-child(even) { background:#f7fafd; }
   tbody tr:hover { background:#eaf4ff; }
+  
+  /* 🔥 ทำให้ช่องกรอกดูเหมือนข้อความปกติ */
+  .input-cell {
+    width: 100%; border: 1px solid transparent; background: transparent;
+    padding: 6px; border-radius: 4px; font-family: inherit; font-size: 14px; color: #2c3e50;
+    transition: 0.2s; outline: none;
+  }
+  .input-cell:hover { border-color: #cbd5e1; background: #fff; }
+  .input-cell:focus { border-color: #2989d8; background: #fff; box-shadow: 0 0 0 2px rgba(41,137,216,0.2); }
   .col-no { width:50px; text-align:center; font-weight:600; color:#2989d8; }
+  
   .note { text-align:center; font-size:12px; color:#6b7c8f; margin-top:14px; }
   
   @media print {
     body { background:#fff; padding:0; }
-    .action-bar { display: none; } /* ซ่อนปุ่มตอนพิมพ์ */
+    .toolbar { display: none; }
     .table-wrap { box-shadow:none; padding:0; }
+    .input-cell { border: none; background: transparent; padding: 0; }
     thead th { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   }
 </style>
 </head>
 <body>
   <h1>⚽ ตารางท้ายผลบอล</h1>
-  <p class="subtitle">ส่งออกเมื่อ 9/11/2569 08:32:10 · 3 รายการ</p>
+  <p class="subtitle">พิมพ์แก้ไขในตารางได้เลย ระบบจะบันทึกอัตโนมัติ</p>
   
-  <!-- 🔥 ปุ่มสำหรับพิมพ์หรือเซฟ PDF -->
-  <div class="action-bar">
-    <button class="btn-print" onclick="window.print()">🖨️ พิมพ์ตาราง / บันทึกเป็น PDF</button>
+  <!-- 🔥 แถบเครื่องมือ -->
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="addNewRow()">➕ เพิ่มแถวใหม่</button>
+    <button class="btn btn-success" onclick="exportData()">📤 ส่งออก (JSON)</button>
+    <button class="btn btn-warning" onclick="document.getElementById('fileInput').click()">📥 นำเข้า (JSON)</button>
+    <button class="btn btn-danger" onclick="clearAllData()">🗑️ ล้างข้อมูล</button>
+    <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="importData(event)">
   </div>
 
   <div class="table-wrap">
@@ -69,41 +94,135 @@
           <th>สูงครึ่งแรก (HT)</th>
           <th>สูงครึ่งหลัง (FT)</th>
           <th>ผลรับ</th>
+          <th style="width: 60px; text-align:center;">จัดการ</th>
         </tr>
       </thead>
-      <tbody>
-      <tr>
-        <td class="col-no">1</td>
-        <td>09/11/2569</td>
-        <td>บราซิล ซีรี่ย์ บี</td>
-        <td>โกยาส จีโอ 0 - 0 ปอนเต เปรต้า</td>
-        <td>77</td>
-        <td>ผ่าน (1-0)</td>
-        <td>สูง 0.5</td>
-        <td>สูง 0.5 ✅ ยิงทดเวลา</td>
-      </tr>
-      <tr>
-        <td class="col-no">2</td>
-        <td>09/11/2569</td>
-        <td>เปรู ลีกา 1</td>
-        <td>เดปอร์ติโว การ์ซิลาโซ 0 - 0 โคเมอร์เซียนเตส ยูนิดอส</td>
-        <td>58</td>
-        <td>ไม่ผ่าน (0-0)</td>
-        <td>สูง 0.5</td>
-        <td>สูง 0.5 ❌</td>
-      </tr>
-      <tr>
-        <td class="col-no">3</td>
-        <td>09/11/2569</td>
-        <td>โคลอมเบีย ปริมารา เอ</td>
-        <td>อลิอันซ่า วัลเลดูปาร์ 0 - 0 ลาเนรอส วิลลาวิเซนซิโอ</td>
-        <td>13</td>
-        <td>รอผล</td>
-        <td>สูง 2.5</td>
-        <td></td>
-      </tr></tbody>
+      <tbody id="tableBody">
+        <!-- ตารางจะถูกสร้างด้วย JavaScript -->
+      </tbody>
     </table>
   </div>
-  <p class="note">ไฟล์นี้สร้างจากโปรแกรมตารางท้ายผลบอล</p>
+  <p class="note">ไฟล์นี้สร้างจากโปรแกรมตารางท้ายผลบอล (เวอร์ชันแก้ไขได้)</p>
+
+<script>
+// ข้อมูลเริ่มต้น (ถ้าไม่เคยมีข้อมูลในเครื่อง)
+const DEFAULT_DATA = [
+  { date: "09/11/2569", league: "บราซิล ซีรี่ย์ บี", match: "โกยาส จีโอ 0 - 0 ปอนเต เปรต้า", minute: "77", ht: "ผ่าน (1-0)", ft: "สูง 0.5", result: "สูง 0.5 ✅ ยิงทดเวลา" },
+  { date: "09/11/2569", league: "เปรู ลีกา 1", match: "เดปอร์ติโว การ์ซิลาโซ 0 - 0 โคเมอร์เซียนเตส ยูนิดอส", minute: "58", ht: "ไม่ผ่าน (0-0)", ft: "สูง 0.5", result: "สูง 0.5 ❌" },
+  { date: "09/11/2569", league: "โคลอมเบีย ปริมารา เอ", match: "อลิอันซ่า วัลเลดูปาร์ 0 - 0 ลาเนรอส วิลลาวิเซนซิโอ", minute: "13", ht: "รอผล", ft: "สูง 2.5", result: "" }
+];
+
+let tableData = [];
+
+// โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('jackai_results_data');
+  if (saved) {
+    tableData = JSON.parse(saved);
+  } else {
+    tableData = [...DEFAULT_DATA];
+  }
+  renderTable();
+});
+
+// วาดตาราง
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  tableData.forEach((row, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="col-no">${index + 1}</td>
+      <td><input type="text" class="input-cell" value="${row.date || ''}" onchange="updateData(${index}, 'date', this.value)"></td>
+      <td><input type="text" class="input-cell" value="${row.league || ''}" onchange="updateData(${index}, 'league', this.value)"></td>
+      <td><input type="text" class="input-cell" value="${row.match || ''}" onchange="updateData(${index}, 'match', this.value)"></td>
+      <td><input type="text" class="input-cell" value="${row.minute || ''}" onchange="updateData(${index}, 'minute', this.value)" style="text-align:center;"></td>
+      <td><input type="text" class="input-cell" value="${row.ht || ''}" onchange="updateData(${index}, 'ht', this.value)"></td>
+      <td><input type="text" class="input-cell" value="${row.ft || ''}" onchange="updateData(${index}, 'ft', this.value)"></td>
+      <td><input type="text" class="input-cell" value="${row.result || ''}" onchange="updateData(${index}, 'result', this.value)"></td>
+      <td style="text-align:center;">
+        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteRow(${index})">ลบ</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// อัปเดตข้อมูลเมื่อพิมพ์แก้ไข
+function updateData(index, field, value) {
+  tableData[index][field] = value;
+  saveData();
+}
+
+// บันทึกลง LocalStorage
+function saveData() {
+  localStorage.setItem('jackai_results_data', JSON.stringify(tableData));
+}
+
+// เพิ่มแถวใหม่
+function addNewRow() {
+  tableData.unshift({ date: "", league: "", match: "", minute: "", ht: "", ft: "", result: "" });
+  renderTable();
+  saveData();
+}
+
+// ลบแถว
+function deleteRow(index) {
+  if (confirm('ต้องการลบแถวนี้ใช่หรือไม่?')) {
+    tableData.splice(index, 1);
+    renderTable();
+    saveData();
+  }
+}
+
+// ล้างข้อมูลทั้งหมด
+function clearAllData() {
+  if (confirm('⚠️ ต้องการลบข้อมูลทั้งหมดใช่หรือไม่? (ไม่สามารถกู้คืนได้)')) {
+    tableData = [];
+    renderTable();
+    saveData();
+  }
+}
+
+// ส่งออกข้อมูลเป็น JSON
+function exportData() {
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tableData, null, 2));
+  const downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", "jackai_results_" + Date.now() + ".json");
+  document.body.appendChild(downloadAnchorNode);
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+}
+
+// นำเข้าข้อมูลจาก JSON
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (Array.isArray(imported)) {
+        if (confirm('ต้องการแทนที่ข้อมูลเดิมด้วยข้อมูลที่นำเข้าใช่หรือไม่?')) {
+          tableData = imported;
+        } else {
+          tableData = tableData.concat(imported);
+        }
+        renderTable();
+        saveData();
+      } else {
+        alert('รูปแบบไฟล์ไม่ถูกต้อง');
+      }
+    } catch (err) {
+      alert('ไม่สามารถอ่านไฟล์ได้: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // เคลียร์ค่า
+}
+</script>
 </body>
 </html>
