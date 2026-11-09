@@ -25,10 +25,8 @@
   }
   .btn-primary { background: #2989d8; color: #fff; }
   .btn-primary:hover { background: #1e5799; transform: translateY(-1px); }
-  .btn-success { background: #10b981; color: #fff; }
-  .btn-success:hover { background: #059669; transform: translateY(-1px); }
-  .btn-warning { background: #f59e0b; color: #fff; }
-  .btn-warning:hover { background: #d97706; transform: translateY(-1px); }
+  .btn-save { background: #0ea5e9; color: #fff; }
+  .btn-save:hover { background: #0284c7; transform: translateY(-1px); }
   .btn-danger  { background: #ef4444; color: #fff; padding: 8px 12px; }
   .btn-danger:hover { background: #dc2626; }
   
@@ -77,13 +75,9 @@
   
   <!-- 🔥 แถบเครื่องมือ -->
   <div class="toolbar">
-    <!-- เปลี่ยนข้อความปุ่มให้ตรงกับพฤติกรรม -->
     <button class="btn btn-primary" onclick="addNewRow()">➕ เพิ่มแถวใหม่ (ล่างสุด)</button>
-    <button class="btn btn-success" onclick="exportData()">📤 ส่งออก (JSON)</button>
-    <button class="btn btn-warning" onclick="document.getElementById('fileInput').click()">📥 นำเข้า (JSON)</button>
+    <button class="btn btn-save" onclick="saveAsWebpage()">💾 บันทึกหน้าเว็บ</button>
     <button class="btn btn-danger" onclick="clearAllData()">🗑️ ล้างข้อมูล</button>
-    <input type="file" id="fileInput" accept=".json" style="display:none;" onchange="importData(event)">
-    
     <button class="btn" style="background:#6b7280; color:#fff;" onclick="window.print()">🖨️ พิมพ์ / PDF</button>
   </div>
 
@@ -173,20 +167,16 @@ function saveData() {
 
 // 🔥 เพิ่มแถวใหม่ (ล่างสุด) + เลื่อนจอไปหาพร้อมโฟกัส
 function addNewRow() {
-  // 1. เพิ่มข้อมูลว่างไว้ล่างสุด (ใช้ push)
   tableData.push({ date: "", league: "", match: "", minute: "", ht: "", ft: "", result: "" });
-  
-  // 2. วาดตารางใหม่
   renderTable();
   saveData();
 
-  // 3. เลื่อนหน้าจอลงไปที่แถวล่างสุดและโฟกัสช่องวันที่
   setTimeout(() => {
     const inputs = document.querySelectorAll('.date-input');
     if (inputs.length > 0) {
-      const lastInput = inputs[inputs.length - 1]; // ดึงช่องของแถวล่าสุด
-      lastInput.focus(); // โฟกัสให้พิมพ์ได้เลย
-      lastInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); // เลื่อนจอตาม
+      const lastInput = inputs[inputs.length - 1];
+      lastInput.focus(); 
+      lastInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
     }
   }, 100);
 }
@@ -209,43 +199,86 @@ function clearAllData() {
   }
 }
 
-// ส่งออกข้อมูลเป็น JSON
-function exportData() {
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(tableData, null, 2));
-  const downloadAnchorNode = document.createElement('a');
-  downloadAnchorNode.setAttribute("href", dataStr);
-  downloadAnchorNode.setAttribute("download", "jackai_results_" + Date.now() + ".json");
-  document.body.appendChild(downloadAnchorNode);
-  downloadAnchorNode.click();
-  downloadAnchorNode.remove();
-}
+// 🔥 ฟังก์ชันบันทึกเป็นหน้าเว็บ HTML (Snapshot)
+function saveAsWebpage() {
+  if (tableData.length === 0) {
+    alert('ไม่มีข้อมูลให้บันทึกครับ');
+    return;
+  }
 
-// นำเข้าข้อมูลจาก JSON
-function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (Array.isArray(imported)) {
-        if (confirm('ต้องการแทนที่ข้อมูลเดิมด้วยข้อมูลที่นำเข้าใช่หรือไม่?\n(กด Cancel เพื่อนำมาต่อท้าย)')) {
-          tableData = imported;
-        } else {
-          tableData = tableData.concat(imported);
-        }
-        renderTable();
-        saveData();
-      } else {
-        alert('รูปแบบไฟล์ไม่ถูกต้อง');
-      }
-    } catch (err) {
-      alert('ไม่สามารถอ่านไฟล์ได้: ' + err.message);
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = ''; 
+  // สร้างแถวตารางแบบข้อความธรรมดา (ไม่มี Input)
+  let tableRowsHTML = '';
+  tableData.forEach((row, index) => {
+    tableRowsHTML += `
+      <tr>
+        <td style="text-align:center;">${index + 1}</td>
+        <td>${row.date || ''}</td>
+        <td>${row.league || ''}</td>
+        <td>${row.match || ''}</td>
+        <td style="text-align:center;">${row.minute || ''}</td>
+        <td>${row.ht || ''}</td>
+        <td>${row.ft || ''}</td>
+        <td>${row.result || ''}</td>
+      </tr>
+    `;
+  });
+
+  // สร้างโค้ด HTML สำหรับไฟล์ใหม่
+  const htmlContent = `<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตารางท้ายผลบอล (บันทึกเมื่อ ${new Date().toLocaleDateString('th-TH')})</title>
+<style>
+  body { font-family: "Sarabun","Segoe UI",Tahoma,sans-serif; background: #f8f9fa; padding: 20px; color: #2c3e50; }
+  h1 { text-align: center; font-size: 24px; color: #1a3a5c; margin-bottom: 5px; }
+  .subtitle { text-align: center; font-size: 13px; color: #6b7c8f; margin-bottom: 20px; }
+  .table-wrap { overflow-x:auto; background:#fff; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.1); padding:6px; }
+  table { width:100%; border-collapse:collapse; min-width:1000px; font-size:14px; }
+  thead th { background:linear-gradient(135deg,#1e5799,#2989d8); color:#fff; padding:12px 10px; text-align:left; font-weight:600; white-space:nowrap; }
+  thead th:first-child { border-top-left-radius:10px; }
+  thead th:last-child { border-top-right-radius:10px; }
+  tbody td { padding:10px; border-bottom:1px solid #e8eef4; vertical-align:top; }
+  tbody tr:nth-child(even) { background:#f7fafd; }
+  .col-no { width:50px; text-align:center; font-weight:600; color:#2989d8; }
+</style>
+</head>
+<body>
+  <h1>⚽ ตารางท้ายผลบอล</h1>
+  <p class="subtitle">บันทึกข้อมูลเมื่อ: ${new Date().toLocaleString('th-TH')}</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-no">#</th>
+          <th>วันที่</th>
+          <th>ลีก</th>
+          <th>แมตช์</th>
+          <th>สถานะ / นาที</th>
+          <th>สูงครึ่งแรก (HT)</th>
+          <th>สูงครึ่งหลัง (FT)</th>
+          <th>ผลรับ</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${tableRowsHTML}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+
+  // ดาวน์โหลดไฟล์
+  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ผลบอล_${new Date().toISOString().slice(0,10)}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
